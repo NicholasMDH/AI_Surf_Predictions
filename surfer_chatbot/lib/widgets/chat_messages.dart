@@ -14,13 +14,17 @@ class ChatMessages extends ConsumerWidget {
     return Stack(
       children: [
         ListView.builder(
-          reverse: true,
+          reverse: false, // Changed to false to show newer messages at bottom
           padding: const EdgeInsets.only(bottom: 8, top: 8),
           itemCount: messages.length,
           itemBuilder: (context, index) {
             final message = messages[index];
-            final showTime = index == 0 ||
-                messages[index - 1].timestamp.difference(message.timestamp).inMinutes > 2;
+            final showTime = index == messages.length - 1 ||
+                messages[index + 1]
+                        .timestamp
+                        .difference(message.timestamp)
+                        .inMinutes >
+                    2;
 
             return MessageBubble(
               key: ValueKey(message.id),

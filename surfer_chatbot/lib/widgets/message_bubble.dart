@@ -16,19 +16,27 @@ class MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeStr = DateFormat('HH:mm').format(message.timestamp);
     final isUser = message.isUser;
+    final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) ...[
-            CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColor,
-              child: const Icon(
-                Icons.android,
-                color: Colors.white,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.waves,
+                color: theme.primaryColor,
+                size: 18,
               ),
             ),
             const SizedBox(width: 8),
@@ -36,31 +44,39 @@ class MessageBubble extends StatelessWidget {
           Flexible(
             child: Column(
               crossAxisAlignment:
-              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Container(
                   decoration: BoxDecoration(
                     color: isUser
-                        ? Theme.of(context).primaryColor
-                        : Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16).copyWith(
+                        ? theme.primaryColor
+                        : theme.colorScheme.secondaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20).copyWith(
                       bottomRight: isUser ? const Radius.circular(0) : null,
                       bottomLeft: !isUser ? const Radius.circular(0) : null,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.7,
+                    maxWidth: MediaQuery.of(context).size.width * 0.75,
                   ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 10,
+                    vertical: 12,
                   ),
                   child: Text(
                     message.content,
                     style: TextStyle(
                       color: isUser
                           ? Colors.white
-                          : Theme.of(context).textTheme.bodyLarge?.color,
+                          : theme.textTheme.bodyLarge?.color,
+                      fontSize: 15,
                     ),
                   ),
                 ),
@@ -68,7 +84,10 @@ class MessageBubble extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     timeStr,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                    ),
                   ),
                 ],
               ],
@@ -80,8 +99,8 @@ class MessageBubble extends StatelessWidget {
               message.status == MessageStatus.sent
                   ? Icons.check
                   : Icons.access_time,
-              size: 16,
-              color: Theme.of(context).disabledColor,
+              size: 14,
+              color: theme.disabledColor,
             ),
           ],
         ],
