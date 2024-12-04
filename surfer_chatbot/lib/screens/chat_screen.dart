@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/surf_conditions_provider.dart';
+import '../widgets/surf_quality_panel.dart';
+import '../providers/chat_provider.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/chat_messages.dart';
-import '../widgets/location_display.dart';
 import '../widgets/rive_bot_animation.dart';
-import '../widgets/user_profile_display.dart';
 import '../providers/location_provider.dart';
 import '../providers/user_provider.dart';
 
@@ -14,21 +15,45 @@ class ChatScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locationState = ref.watch(locationProvider);
-    final isLoading = ref.watch(isLocationLoadingProvider);
-    final error = ref.watch(locationErrorProvider);
     final userProfile = ref.watch(userProfileProvider);
+    final selectedSpot = ref.watch(chatProvider).lastSpotMentioned;
+    final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('OpenSurf Bot'),
-        elevation: 2,
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundImage: userProfile.avatarUrl != null
+                  ? NetworkImage(userProfile.avatarUrl!)
+                  : null,
+              child: userProfile.avatarUrl == null
+                  ? const Icon(Icons.person, size: 16)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '${userProfile.name} • ${userProfile.heightCm}cm • ${userProfile.weightKg}kg',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
         actions: [
+          if (locationState.location != null) ...[
+            const Icon(Icons.location_on, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              'San Diego, California',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(width: 16),
+          ],
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Location',
-            onPressed: () {
-              ref.read(locationProvider.notifier).getCurrentLocation();
-            },
+            onPressed: () =>
+                ref.read(locationProvider.notifier).getCurrentLocation(),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -43,67 +68,33 @@ class ChatScreen extends ConsumerWidget {
             flex: 3,
             child: Column(
               children: [
-                Expanded(
-                  child: ChatMessages(),
-                ),
+                Expanded(child: ChatMessages()),
                 Divider(height: 1),
                 ChatInput(),
               ],
             ),
           ),
 
-          // Right side - Animation and Info Row
+          // Right side - Info Panel
           Expanded(
             flex: 2,
             child: Column(
               children: [
-                // Top section - Rive Bot Animation
-                Expanded(
-                  flex: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 36, 34, 40),
-                          // color: const Color(0xFF1F1F1F),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const RiveBotAnimation(),
-                      ),
-                    ),
-                  ),
-                ),
+                // Top section - Animation
+                const RiveBotAnimation(),
 
-                // Bottom section - User Profile and Location
+                // Bottom section - Surf Quality Rating
                 Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: IntrinsicHeight( // This ensures both boxes have same height
-                      child: Row(
-                        children: [
-                          // Left side - User Profile
-                          Expanded(
-                            child: SizedBox.expand(
-                              child: UserProfileDisplay(user: userProfile),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Right side - Location Display
-                          Expanded(
-                            child: SizedBox.expand(
-                              child: LocationDisplay(
-                                location: locationState.location,
-                                isLoading: isLoading,
-                                error: error,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final surfConditions = ref.watch(surfConditionsProvider);
+                      return SurfQualityPanel(
+                        rating: surfConditions.rating,
+                        confidence: surfConditions.confidence,
+                        factors: surfConditions.factors,
+                        factorDescriptions: surfConditions.factorDescriptions,
+                      );
+                    },
                   ),
                 ),
               ],
@@ -118,18 +109,19 @@ class ChatScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About Chatbot'),
+        title: const Text('About OpenSurf Bot'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('This chatbot demo features:'),
+            Text('This chatbot features:'),
             SizedBox(height: 8),
             Text('• Animated bot character'),
-            Text('• Location awareness with address lookup'),
-            Text('• Message history'),
-            Text('• Real-time responses'),
-            Text('• User profile display'),
+            Text('• Location awareness'),
+            Text('• Enhanced ML predictions'),
+            Text('• Real-time surf conditions'),
+            Text('• Wave analysis'),
+            Text('• Board recommendations'),
           ],
         ),
         actions: [

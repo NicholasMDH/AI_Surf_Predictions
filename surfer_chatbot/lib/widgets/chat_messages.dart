@@ -3,18 +3,48 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
 import 'message_bubble.dart';
 
-class ChatMessages extends ConsumerWidget {
+class ChatMessages extends ConsumerStatefulWidget {
   const ChatMessages({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatMessages> createState() => _ChatMessagesState();
+}
+
+class _ChatMessagesState extends ConsumerState<ChatMessages> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final messages = ref.watch(messagesProvider);
     final isLoading = ref.watch(isChatLoadingProvider);
+
+    // Trigger scroll to bottom when messages change
+    if (messages.isNotEmpty) {
+      _scrollToBottom();
+    }
 
     return Stack(
       children: [
         ListView.builder(
-          reverse: false, // Changed to false to show newer messages at bottom
+          controller: _scrollController,
           padding: const EdgeInsets.only(bottom: 8, top: 8),
           itemCount: messages.length,
           itemBuilder: (context, index) {

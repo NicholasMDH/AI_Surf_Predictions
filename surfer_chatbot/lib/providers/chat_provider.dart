@@ -2,12 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/message.dart';
+import 'surf_conditions_provider.dart';
 
 class ChatState {
   final List<Message> messages;
   final bool isLoading;
   final String? error;
-  final String? lastSpotMentioned; // Add this to maintain context
+  final String? lastSpotMentioned;
 
   ChatState({
     this.messages = const [],
@@ -32,10 +33,11 @@ class ChatState {
 }
 
 class ChatNotifier extends StateNotifier<ChatState> {
-  ChatNotifier() : super(ChatState());
+  final Ref ref;
+
+  ChatNotifier(this.ref) : super(ChatState());
 
   void sendMessage(String content) async {
-    // Add user message
     final userMessage = Message(
       content: content,
       isUser: true,
@@ -50,7 +52,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       print("Sending chat message to API: $content");
 
-      // If it's a "yes" response and we have a last spot mentioned, append the spot name
       String apiContent = content;
       if (content.toLowerCase() == 'yes' && state.lastSpotMentioned != null) {
         apiContent = '$content for ${state.lastSpotMentioned}';
@@ -71,13 +72,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
         if (data.containsKey('response')) {
           String botResponse = data['response'] as String;
 
-          // Update lastSpotMentioned if this message mentions a new spot
-          // This would need a function to extract spot names from the response
+          // Update surf conditions when we get a response
+          ref
+              .read(surfConditionsProvider.notifier)
+              .updateConditions(botResponse);
+
+          // Update lastSpotMentioned if a spot is mentioned
           if (botResponse.contains('Pacific Beach Pier')) {
             state = state.copyWith(lastSpotMentioned: 'Pacific Beach Pier');
-          } else if (botResponse.contains('Coronado Beaches')) {
-            state = state.copyWith(lastSpotMentioned: 'Coronado Beaches');
-          } // Add other spots as needed
+          } else if (botResponse.contains('Ocean Beach Jetty')) {
+            state = state.copyWith(lastSpotMentioned: 'Ocean Beach Jetty');
+          }
 
           sendBotMessage(botResponse);
         } else {
@@ -124,9 +129,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 }
 
-// Providers
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  return ChatNotifier();
+  return ChatNotifier(ref);
 });
 
 final isChatLoadingProvider = Provider<bool>((ref) {
